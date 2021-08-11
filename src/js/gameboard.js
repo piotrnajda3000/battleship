@@ -51,12 +51,13 @@ export default function Gameboard() {
   };
 
   const receiveAttack = (x, y) => {
-    let field = getField(x, y);
-    if (field !== "" && field !== "missed") {
-      const ship = field.ship;
-      const hitMapPos = field.shipHitMapPos;
-      return ship.hit(hitMapPos);
-    } else if (field !== "missed") {
+    let square = getField(x, y);
+    if (square !== "" && square !== "missed") {
+      const ship = square.ship;
+      const hitMapPos = square.shipHitMapPos;
+      ship.hit(hitMapPos);
+      return setField(x, y, "hit");
+    } else if (square !== "missed") {
       return setField(x, y, "missed");
     }
   };

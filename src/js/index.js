@@ -1,18 +1,23 @@
 import "normalize.css";
 import "../styles/style.css";
 import game from "./game";
-import { renderPlayerBoard, renderAttackBoard } from "./dom";
+import dom from "./dom";
+import events from "./events";
 
 const [humanPlayer, computerPlayer] = game.init();
 
-const humanBoard = humanPlayer.gameboard.getBoard();
-const humanBoardDiv = document.querySelector("#playerBoard");
+events.subscribe("Render player board", () => {
+  if (!game.gameOver) {
+    dom.renderPlayerBoard(humanPlayer);
+  }
+});
 
-const computerBoard = computerPlayer.gameboard.getBoard();
-const attackBoardDiv = document.querySelector("#attackBoard");
+events.subscribe("Render computer's board", () => {
+  if (!game.gameOver) {
+    dom.renderAttackBoard(computerPlayer);
+  }
+});
 
-renderPlayerBoard(humanBoard, humanBoardDiv);
-renderAttackBoard(computerBoard, attackBoardDiv);
-
-// When I click on a square in the enemy's board, it registers a hit there,
-// revealing whether it was a hit or a miss.
+// Init
+events.publish("Render player board");
+events.publish("Render computer's board");
