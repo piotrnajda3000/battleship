@@ -4,20 +4,31 @@ import game from "./game";
 import dom from "./dom";
 import events from "./events";
 
+// Init game's players and gameboards
+
 const [humanPlayer, computerPlayer] = game.init();
 
-events.subscribe("Render player board", () => {
-  if (!game.gameOver) {
-    dom.renderPlayerBoard(humanPlayer);
+// Subscribe to display events
+
+events.subscribe("Render player board", ({ hover } = false) => {
+  // Grabs data from gameboard and displays it
+  dom.renderPlayerBoard(humanPlayer);
+  if (!hover) {
+    // Click on a ship and hover it to a selected adjacent square
+    // Activates the hover branch of logic if clicked on a ship
+    dom.addClickAndMove(humanPlayer);
+  } else if (hover) {
+    // Extend the hover to any square on the board
+    dom.extendHover(humanPlayer, hover);
   }
 });
 
 events.subscribe("Render computer's board", () => {
-  if (!game.gameOver) {
-    dom.renderAttackBoard(computerPlayer);
-  }
+  dom.renderAttackBoard(computerPlayer);
+  dom.addFightFunctionality();
 });
 
-// Init
+// Init game display
+
 events.publish("Render player board");
 events.publish("Render computer's board");

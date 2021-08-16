@@ -31,16 +31,6 @@ h2 {
   justify-content: space-evenly;
   align-items: space-between;
   transition: opacity 300ms ease-in-out;
-  animation: fade-in 1000ms ease-in-out;
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 100;
-  }
 }
 
 .board {

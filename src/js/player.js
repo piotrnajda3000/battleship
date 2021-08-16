@@ -3,21 +3,21 @@ import Gameboard from "./gameboard";
 const Player = ({ who }) => {
   const gameboard = Gameboard();
 
-  const attack = (x, y) => {
-    return enemyGb.receiveAttack(x, y);
-  };
-
-  let enemyGb = null;
+  let enemyGameboard = null;
 
   const setEnemyBoard = (enemyBoard) => {
-    enemyGb = enemyBoard;
+    enemyGameboard = enemyBoard;
+  };
+
+  const attack = (x, y) => {
+    return enemyGameboard.receiveAttack(x, y);
   };
 
   const randomAttack = () => {
     let move;
     do {
       let [randomX, randomY] = getRandomCoords();
-      move = enemyGb.receiveAttack(randomX, randomY);
+      move = enemyGameboard.receiveAttack(randomX, randomY);
     } while (move === undefined);
     return move;
   };
@@ -38,6 +38,8 @@ const Player = ({ who }) => {
     };
   }
 };
+
+/* Helper math methods */
 
 const getRandomNumInRange = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;

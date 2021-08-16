@@ -30,11 +30,11 @@ export default function Gameboard() {
 
   const getBoard = () => gameboard;
 
-  const getField = (x, y) => {
+  const getSquare = (x, y) => {
     return gameboard[y][x];
   };
 
-  const setField = (x, y, value) => {
+  const setSquare = (x, y, value) => {
     gameboard[y][x] = value;
     return { x, y, value };
   };
@@ -44,21 +44,37 @@ export default function Gameboard() {
       const ship = Ship(shipLength);
       shipsOnBoard.push(ship);
       for (let i = 0; i < shipLength; i++) {
-        setField(x + i, y, { ship, shipHitMapPos: i });
+        setSquare(parseInt(x, 10) + parseInt(i, 10), parseInt(y, 10), {
+          ship,
+          shipHitMapPos: i,
+        });
       }
       return ship;
     };
   };
 
+  function deleteShip(ship) {
+    // Delete from the board
+    for (const [y, row] of this.getBoard().entries()) {
+      for (const [x, column] of row.entries()) {
+        if (column.ship == ship) {
+          setSquare(x, y, "");
+        }
+      }
+    }
+    // Delete from the shipsOnBoard
+    shipsOnBoard.splice(shipsOnBoard.indexOf(ship), 1);
+  }
+
   const receiveAttack = (x, y) => {
-    let square = getField(x, y);
+    let square = getSquare(x, y);
     if (square !== "" && square !== "missed") {
       const ship = square.ship;
       const hitMapPos = square.shipHitMapPos;
       ship.hit(hitMapPos);
-      return setField(x, y, "hit");
+      return setSquare(x, y, "hit");
     } else if (square !== "missed") {
-      return setField(x, y, "missed");
+      return setSquare(x, y, "missed");
     }
   };
 
@@ -68,8 +84,11 @@ export default function Gameboard() {
 
   return {
     getBoard,
-    getField,
+    shipsOnBoard,
+    getSquare,
+    setSquare,
     placeShip,
+    deleteShip,
     receiveAttack,
     areAllSunk,
   };

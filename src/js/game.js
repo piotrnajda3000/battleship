@@ -1,10 +1,8 @@
+import dom from "./dom";
 import events from "./events";
 import Player from "./player";
 
 const game = (() => {
-  let gameOver;
-  events.subscribe("Set game over", () => (gameOver = true));
-
   const init = () => {
     const humanPlayer = Player({ who: "Human" });
     const computerPlayer = Player({ who: "Computer" });
@@ -13,17 +11,20 @@ const game = (() => {
     computerPlayer.setEnemyBoard(humanPlayer.gameboard);
 
     // Place ships on the board
-    humanPlayer.gameboard.placeShip(0, 0)(5);
-    humanPlayer.gameboard.placeShip(0, 1)(4);
-    humanPlayer.gameboard.placeShip(0, 2)(3);
-    humanPlayer.gameboard.placeShip(0, 3)(3);
-    humanPlayer.gameboard.placeShip(0, 4)(2);
 
-    // computerPlayer.gameboard.placeShip(0, 9)(5);
-    // computerPlayer.gameboard.placeShip(0, 8)(4);
-    // computerPlayer.gameboard.placeShip(0, 7)(3);
-    // computerPlayer.gameboard.placeShip(0, 6)(3);
-    computerPlayer.gameboard.placeShip(0, 5)(2);
+    humanPlayer.gameboard.placeShip(8, 0)(2);
+
+    computerPlayer.gameboard.placeShip(0, 0)(2);
+
+    // Subscribe to events
+
+    events.subscribe("Check if game over", () => {
+      if (computerPlayer.gameboard.areAllSunk()) {
+        dom.displayGameOver("You won");
+      } else if (humanPlayer.gameboard.areAllSunk()) {
+        dom.displayGameOver("Computer won");
+      }
+    });
 
     events.subscribe("Player attacks", ({ x, y }) => {
       computerPlayer.gameboard.receiveAttack(x, y);
@@ -34,22 +35,11 @@ const game = (() => {
       events.publish("Render player board");
     });
 
-    events.subscribe("Check if game over", () => {
-      if (computerPlayer.gameboard.areAllSunk()) {
-        events.publish("Display game over", "You won");
-        events.publish("Set game over");
-      } else if (humanPlayer.gameboard.areAllSunk()) {
-        events.publish("Display game over", "Computer won");
-        events.publish("Set game over");
-      }
-    });
-
     return [humanPlayer, computerPlayer];
   };
 
   return {
     init,
-    gameOver,
   };
 })();
 

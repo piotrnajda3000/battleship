@@ -5,14 +5,14 @@ const newShip = newGameboard.placeShip(0, 0)(3);
 const newShip2 = newGameboard.placeShip(1, 1)(2);
 
 test("(1) Given coordinates and a ship length, places a ship on the gameboard", () => {
-  expect(newGameboard.getField(0, 0).ship).toEqual(newShip);
-  expect(newGameboard.getField(1, 0).ship).toEqual(newShip);
-  expect(newGameboard.getField(2, 0).ship).toEqual(newShip);
+  expect(newGameboard.getSquare(0, 0).ship).toEqual(newShip);
+  expect(newGameboard.getSquare(1, 0).ship).toEqual(newShip);
+  expect(newGameboard.getSquare(2, 0).ship).toEqual(newShip);
 });
 
 test("(2) Given coordinates and a ship length, places a ship on the gameboard ", () => {
-  expect(newGameboard.getField(1, 1).ship).toEqual(newShip2);
-  expect(newGameboard.getField(2, 1).ship).toEqual(newShip2);
+  expect(newGameboard.getSquare(1, 1).ship).toEqual(newShip2);
+  expect(newGameboard.getSquare(2, 1).ship).toEqual(newShip2);
 });
 
 describe("receiveAttack function", () => {
@@ -32,7 +32,7 @@ describe("receiveAttack function", () => {
 
     test("After NOT hitting a ship, it correctly registers that spot as a missed shot", () => {
       newGameboard.receiveAttack(0, 3);
-      expect(newGameboard.getField(0, 3)).toEqual("missed");
+      expect(newGameboard.getSquare(0, 3)).toEqual("missed");
     });
   });
 });
