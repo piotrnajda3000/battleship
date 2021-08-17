@@ -23,6 +23,7 @@ const dom = (() => {
         let squareDiv;
         if (column.ship !== undefined) {
           squareDiv = createSquare(x, y, `${column.ship.info.length}`, "ship");
+          squareDiv = assignHitMapPosDom(squareDiv, column.ship);
         } else if (column == "missed") {
           squareDiv = createSquare(x, y, `-`, "miss");
         } else if (column == "hit") {
@@ -38,7 +39,7 @@ const dom = (() => {
     humanBoardDiv.append(title("Your board"));
   };
 
-  const renderAttackBoard = (computer) => {
+  const renderComputerBoard = (computer) => {
     resetDynamicContent(computerBoardDiv);
 
     const gameboard = computer.gameboard.getBoard();
@@ -80,16 +81,6 @@ const dom = (() => {
   const addClickAndMove = (player) => {
     const gameboard = player.gameboard;
 
-    // User hasn't clicked a ship to move yet
-    let clickedSquareObj = null;
-    let clickedSquareShipLength = null;
-
-    // FIXME: globals
-    let fromX = null;
-    let fromY = null;
-
-    // Define function chain
-
     const addClickListener = () => {
       const shipElements = [...humanBoardDiv.querySelectorAll(".ship")];
       shipElements.forEach((shipElement) =>
@@ -98,40 +89,65 @@ const dom = (() => {
     };
 
     const handleClick = (event) => {
-      const [x, y] = getCoordinates(event);
-      fromX = x;
-      fromY = y;
-      clickedSquareObj = gameboard.getSquare(x, y);
+      const clickedSquare = event.target;
+      const [x, y] = getCoordinates(clickedSquare);
+
+      const clickedSquareObj = gameboard.getSquare(x, y);
       gameboard.deleteShip(clickedSquareObj.ship);
-      addEnterListener();
+
+      const clickDataToSend = {
+        from: {
+          x,
+          y,
+        },
+        renderOffset: +clickedSquare.getAttribute("data-hitmappos"),
+        square: clickedSquareObj,
+      };
+
+      addHoverListener(clickDataToSend);
     };
 
-    const addEnterListener = () => {
+    const addHoverListener = (clickData) => {
       const squares = [...humanBoardDiv.querySelectorAll(".square")];
       squares.forEach((square) =>
-        square.addEventListener("mouseenter", (e) => handleEnter(e))
+        square.addEventListener("mouseenter", (event) =>
+          handleHover(event, clickData)
+        )
       );
     };
 
-    const handleEnter = (event) => {
-      const [toX, toY] = getCoordinates(event);
-      if (!gameboard.getSquare(toX, toY).ship) {
-        clickedSquareShipLength = clickedSquareObj.ship.info.length;
-        const clickedSquareShip = gameboard.placeShip(
-          getLegalX(toX, clickedSquareShipLength),
-          toY
-        )(clickedSquareShipLength);
+    const handleHover = (event, clickData) => {
+      const hoveredToField = event.target;
+      const [x, y] = getCoordinates(hoveredToField);
+
+      const hoverData = {
+        to: {
+          x,
+          y,
+        },
+      };
+
+      if (!gameboard.getSquare(hoverData.to.x, hoverData.to.y).ship) {
+        const hoveringShip = placeShipDOM(
+          clickData.square.ship,
+          hoverData.to.x,
+          hoverData.to.y,
+          clickData.renderOffset,
+          gameboard
+        );
+
         events.publish("Render player board", {
           hover: {
-            ship: clickedSquareShip,
+            ship: hoveringShip,
             from: {
-              x: +fromX,
-              y: +fromY,
+              x: +clickData.from.x,
+              y: +clickData.from.y,
             },
             to: {
-              x: +toX,
-              y: +toY,
+              x: +hoverData.to.x,
+              y: +hoverData.to.y,
             },
+            renderOffset: clickData.renderOffset,
           },
         });
       }
@@ -144,38 +160,44 @@ const dom = (() => {
   const extendHover = (player, hover) => {
     const gameboard = player.gameboard;
 
-    console.log(
-      "from",
-      hover.from.x,
-      hover.from.y,
-      "to",
-      hover.to.x,
-      hover.to.y
-    );
-
+    // The square we hovered to becomes a place we hover from
     const fromY = hover.to.y;
     const fromX = hover.to.x;
 
-    const addEnterListener = () => {
+    // console.log(
+    //   "from",
+    //   hover.from.x,
+    //   hover.from.y,
+    //   "to",
+    //   hover.to.x,
+    //   hover.to.y
+    // );
+
+    const addHoverListener = () => {
       const squares = [...humanBoardDiv.querySelectorAll(".square")];
       squares.forEach((square) => {
-        square.addEventListener("mouseenter", handleEnter);
+        square.addEventListener("mouseenter", handleHover);
       });
     };
 
-    const handleEnter = (event) => {
-      const [toX, toY] = getCoordinates(event);
+    const handleHover = (hoverEvent) => {
+      const currentSquare = hoverEvent.target;
+      const [toX, toY] = getCoordinates(currentSquare);
+
       // Don't rerender if user is on the same square
       if (hover.to.x == toX && hover.to.y == toY) {
+        // Ability to place a ship if the user decides so
+        currentSquare.addEventListener("click", dropShip);
       } else {
         gameboard.deleteShip(hover.ship);
         if (!gameboard.getSquare(toX, toY).ship) {
-          const shipLength = hover.ship.info.length;
-          const hoveringShip = gameboard.placeShip(
-            getLegalX(toX, shipLength),
-            toY
-          )(shipLength);
-          // Rerender if user over a different square
+          const hoveringShip = placeShipDOM(
+            hover.ship,
+            toX,
+            toY,
+            hover.renderOffset,
+            gameboard
+          );
           events.publish("Render player board", {
             hover: {
               ship: hoveringShip,
@@ -187,14 +209,21 @@ const dom = (() => {
                 x: +toX,
                 y: +toY,
               },
+              renderOffset: hover.renderOffset,
             },
           });
         }
       }
     };
 
+    const dropShip = () => {
+      events.publish("Render player board", {
+        hover: false,
+      });
+    };
+
     // Start the chain
-    addEnterListener();
+    addHoverListener();
   };
 
   const addFightFunctionality = () => {
@@ -213,17 +242,60 @@ const dom = (() => {
 
   // Private methods
 
-  const getLegalX = (x, shipLength) => {
+  const assignHitMapPosDom = (div, ship) => {
+    const hitMapToDom = ship.dom.addons.hitMapDOM;
+
+    if (hitMapToDom.arr.length == ship.info.length) {
+      hitMapToDom.clearForBoardRender();
+    }
+
+    if (hitMapToDom.arr.length < ship.info.hitMap.length) {
+      hitMapToDom.arr.push(true);
+      div.setAttribute("data-hitMapPos", hitMapToDom.arr.length - 1);
+    }
+    return div;
+  };
+
+  const placeShipDOM = function createShipForDomDisplay(
+    ship,
+    x,
+    y,
+    whereGrabbed,
+    gameboard
+  ) {
+    const xRenderOffset = calculateXRenderOffset(
+      whereGrabbed,
+      ship.info.length
+    );
+    const xInBounds = getXInBounds(x - xRenderOffset, ship.info.length);
+
+    return gameboard.placeShip(xInBounds, y)(ship.info.length);
+  };
+
+  const calculateXRenderOffset = (whereGrabbed, shipLength) => {
+    if (whereGrabbed == 0) {
+      // If grabbed by the first square
+      return 0;
+    } else if (whereGrabbed == shipLength - 1) {
+      // If grabbed by the last square
+      return shipLength - 1;
+    } else {
+      // If grabbed by any square inbetween
+      return shipLength - 1 - whereGrabbed;
+    }
+  };
+
+  const getXInBounds = (x, shipLength) => {
     if (+x + shipLength > 10) {
-      return getLegalX(x - 1, shipLength);
+      return getXInBounds(x - 1, shipLength);
     } else {
       return x;
     }
   };
 
-  const getCoordinates = (event) => [
-    +event.target.getAttribute("data-x"),
-    +event.target.getAttribute("data-y"),
+  const getCoordinates = (eventTarget) => [
+    +eventTarget.getAttribute("data-x"),
+    +eventTarget.getAttribute("data-y"),
   ];
 
   // HTML and CSS helper functions
@@ -249,11 +321,11 @@ const dom = (() => {
   };
 
   return {
-    renderAttackBoard,
-    addFightFunctionality,
     renderPlayerBoard,
     addClickAndMove,
     extendHover,
+    renderComputerBoard,
+    addFightFunctionality,
     displayGameOver,
   };
 })();

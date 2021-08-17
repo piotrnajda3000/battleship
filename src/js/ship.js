@@ -17,6 +17,17 @@ export default function Ship(length) {
     hitMap.push(false);
   }
 
+  const dom = {
+    addons: {
+      hitMapDOM: {
+        arr: [],
+        clearForBoardRender() {
+          this.arr = [];
+        },
+      },
+    },
+  };
+
   return Object.assign(
     {},
     {
@@ -24,6 +35,7 @@ export default function Ship(length) {
         length,
         hitMap,
       },
+      dom,
       hit,
       isSunk,
     }

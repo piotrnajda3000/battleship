@@ -17,6 +17,22 @@ Solve those, and I'll end up with the solution.
 
 ---
 
+Rendering the ship on the board is incomplete, because I'm not taking into the account the square I grab it by. Certainly seems doable, though.
+
+See the position in the hitmap that I'm at, and then **offset the render by the ship -(length - position)**.
+So for example, I'm grabbing it by second square, the length is three.
+I need to offset it by -1.
+
+---
+
+It just eats away the ship that's on the board.
+
+---
+
+I've had an idea about mouseleave before. It seems more appropriate and descriptive, and potentially could give me less problems and less code...
+
+---
+
 So now, if I'm hovering over the same square as before, uhh....
 
 ---

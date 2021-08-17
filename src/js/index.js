@@ -24,7 +24,7 @@ events.subscribe("Render player board", ({ hover } = false) => {
 });
 
 events.subscribe("Render computer's board", () => {
-  dom.renderAttackBoard(computerPlayer);
+  dom.renderComputerBoard(computerPlayer);
   dom.addFightFunctionality();
 });
 
