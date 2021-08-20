@@ -1,6 +1,7 @@
 import dom from "./dom";
 import events from "./events";
 import Player from "./player";
+import { getRandomNumInRange } from "./math";
 
 const game = (() => {
   const init = () => {
@@ -9,13 +10,6 @@ const game = (() => {
 
     humanPlayer.setEnemyBoard(computerPlayer.gameboard);
     computerPlayer.setEnemyBoard(humanPlayer.gameboard);
-
-    // Place ships on the board
-
-    humanPlayer.gameboard.placeShip(0, 0)(2);
-    humanPlayer.gameboard.placeShip(3, 2)(3);
-
-    computerPlayer.gameboard.placeShip(0, 0)(2);
 
     // Subscribe to events
 
@@ -34,10 +28,6 @@ const game = (() => {
     events.subscribe("Play computer's turn", () => {
       computerPlayer.randomAttack();
       events.publish("Render player board");
-    });
-
-    events.subscribe("Start the game", () => {
-      events.publish("Play computer's turn");
     });
 
     return [humanPlayer, computerPlayer];

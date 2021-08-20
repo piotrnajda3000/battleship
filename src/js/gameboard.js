@@ -2,10 +2,11 @@ import Ship from "./ship";
 
 import isEqual from "lodash.isequal";
 
-export default function Gameboard() {
-  const gameboard = [];
+import { getRandomNumInRange } from "./math";
 
+export default function Gameboard() {
   // gameboard = 10x10 2D Array
+  const gameboard = [];
   for (let y = 0; y < 10; y++) {
     const row = [];
     for (let x = 0; x < 10; x++) {
@@ -14,7 +15,6 @@ export default function Gameboard() {
     }
     gameboard.push(row);
   }
-
   const shipsOnBoard = [];
 
   const getBoard = () => gameboard;
@@ -33,21 +33,24 @@ export default function Gameboard() {
       const ship = Ship(shipLength);
 
       if (
+        // If the ship isn't in shipsOnBoard yet
         shipsOnBoard.some((shipOnBoard) => isEqual(ship, shipOnBoard)) == false
       ) {
         shipsOnBoard.push(ship);
       } else {
-        const shipOnBoardIdx = shipsOnBoard.findIndex((shipOnBoard) =>
+        /* After deleting a ship to re-render it on hover,
+        it loses it's reference to the shipOnBoard   
+        */
+        const shipIdx = shipsOnBoard.findIndex((shipOnBoard) =>
           isEqual(ship, shipOnBoard)
         );
-        shipsOnBoard[shipOnBoardIdx] = ship;
+        shipsOnBoard[shipIdx] = ship;
       }
 
       for (let i = 0; i < shipLength; i++) {
         setSquare(+x + i, +y, {
           ship,
           shipHitMapPos: i,
-          // Tying ship to DOM, I can do better than this.
         });
       }
       return ship;
@@ -55,7 +58,6 @@ export default function Gameboard() {
   };
 
   function deleteShip(ship) {
-    // From the board
     for (const [y, row] of this.getBoard().entries()) {
       for (const [x, column] of row.entries()) {
         if (column.ship == ship) {
@@ -88,6 +90,13 @@ export default function Gameboard() {
     return this.placeShip(toX, toY)(ship.info.length);
   }
 
+  /* Helper math methods */
+
+  const getRandomCoords = () => [
+    getRandomNumInRange(0, 9),
+    getRandomNumInRange(0, 9),
+  ];
+
   return {
     getBoard,
     getSquare,
@@ -99,5 +108,6 @@ export default function Gameboard() {
     receiveAttack,
     areAllSunk,
     moveShip,
+    getRandomCoords,
   };
 }

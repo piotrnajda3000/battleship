@@ -1,4 +1,7 @@
 import events from "./events";
+import { getRandomNumInRange } from "./math";
+import Ship from "./ship";
+import Gameboard from "./gameboard";
 
 const dom = (() => {
   // Cache dom
@@ -13,7 +16,7 @@ const dom = (() => {
 
     if (options.showStartButton) createStartButton();
 
-    // Parse and display rows and columns
+    // Render the board
     for (const [y, row] of player.gameboard.getBoard().entries()) {
       const rowDiv = document.createElement("div");
       rowDiv.classList.add("row");
@@ -34,6 +37,7 @@ const dom = (() => {
       humanBoardDiv.append(rowDiv);
     }
 
+    // After rendering all the fields
     if (options.showRestrictedArea) {
       const ships = [...humanBoardDiv.querySelectorAll(".ship")];
       ships.forEach((ship) => renderRestrictedArea(ship));
@@ -254,6 +258,68 @@ const dom = (() => {
 
   // Private methods
 
+  const randomlyPlaceShips = (player) => {
+    // Hardcode ships first to then randomly move them.
+    const ships = [
+      player.gameboard.placeShip(0, 0)(2),
+      player.gameboard.placeShip(0, 2)(3),
+      player.gameboard.placeShip(0, 4)(3),
+      player.gameboard.placeShip(0, 6)(4),
+      player.gameboard.placeShip(0, 8)(5),
+    ];
+
+    if (player.who == "Human") {
+      events.publish("Render player board with click & drop ability");
+    } else {
+      events.publish("Render computer's board");
+    }
+
+    for (const ship of ships) {
+      let wasAbleToMoveShip = false;
+
+      do {
+        const [x, y] = player.gameboard.getRandomCoords();
+
+        const data = {
+          click: {
+            whereClicked: getRandomNumInRange(0, ship.info.length - 1),
+            ship,
+          },
+          hover: {
+            to: {
+              x,
+              y,
+            },
+          },
+          render: { to: {} },
+        };
+        data.render = {
+          to: {
+            x: processX(
+              data.click.whereClicked,
+              data.click.ship.info.length,
+              data.hover.to.x
+            ),
+          },
+        };
+
+        if (canIPlaceShip(data, player.gameboard)) {
+          player.gameboard.moveShip(ship, data.render.to.x, data.hover.to.y);
+          wasAbleToMoveShip = true;
+          if (player.who == "Human") {
+            events.publish("Render player board with click & drop ability");
+          } else {
+            events.publish("Render computer's board");
+          }
+        } else {
+          wasAbleToMoveShip = false;
+        }
+      } while (wasAbleToMoveShip == false);
+    }
+
+    console.log(player.gameboard.getBoard(), player.who);
+  };
+
   const dropShip = () => {
     events.publish("Render player board with click & drop ability", {
       hover: false,
@@ -270,6 +336,7 @@ const dom = (() => {
         data.render.to.x + i,
         data.hover.to.y
       );
+
       const restrictedAreaId = squareToPlaceShipAtDiv.getAttribute(
         "data-restrictedareaid"
       );
@@ -281,7 +348,10 @@ const dom = (() => {
           continue;
         }
       } else if (restrictedAreaId != null) {
-        if (restrictedAreaId != gameboard.getShipID(data.click.ship)) {
+        if (
+          restrictedAreaId != gameboard.getShipID(data.click.ship) ||
+          restrictedAreaId == "corner"
+        ) {
           return false;
         } else {
           continue;
@@ -291,10 +361,7 @@ const dom = (() => {
     return true;
   };
 
-  const processX = function processXForRender(whereGrabbed, shipLength, x) {
-    const xRenderOffset = calculateXRenderOffset(whereGrabbed, shipLength);
-    return getXInBounds(x - xRenderOffset, shipLength);
-  };
+  // Processing 'x' for rendering
 
   const calculateXRenderOffset = (whereGrabbed, shipLength) => {
     if (whereGrabbed == 0) {
@@ -322,6 +389,13 @@ const dom = (() => {
     }
   };
 
+  const processX = function processXForRender(whereGrabbed, shipLength, x) {
+    const xRenderOffset = calculateXRenderOffset(whereGrabbed, shipLength);
+    return getXInBounds(x - xRenderOffset, shipLength);
+  };
+
+  // Coordinate helpers
+
   const getCoordinates = (eventTarget) => [
     +eventTarget.getAttribute("data-x"),
     +eventTarget.getAttribute("data-y"),
@@ -329,8 +403,6 @@ const dom = (() => {
 
   const getSquareFromCoordinates = (x, y) =>
     document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
-
-  // HTML and CSS helper functions
 
   const resetDynamicContent = (boardDiv) => {
     boardDiv.innerHTML = "";
@@ -346,6 +418,18 @@ const dom = (() => {
     return square;
   };
 
+  const createStartButton = () => {
+    const startButton = document.createElement("button");
+    startButton.setAttribute("id", "start");
+    startButton.textContent = "Lock ships";
+    humanBoardDiv.append(startButton);
+    startButton.addEventListener("click", () => {
+      events.publish("Play computer's turn");
+      events.publish("Randomly place ships on computer's board");
+      startButton.classList.add("hidden");
+    });
+  };
+
   const setShipData = (div, column, gameboard) => {
     div.setAttribute("data-hitMapPos", column.shipHitMapPos);
     div.setAttribute("data-shipID", gameboard.getShipID(column.ship));
@@ -356,18 +440,6 @@ const dom = (() => {
     const h2 = document.createElement("h2");
     h2.textContent = title;
     return h2;
-  };
-
-  const createStartButton = () => {
-    const startButton = document.createElement("button");
-    startButton.setAttribute("id", "start");
-    startButton.textContent = "Lock ships";
-    humanBoardDiv.append(startButton);
-    startButton.addEventListener("click", () => {
-      events.publish("Start the game");
-      events.publish("Render computer's board");
-      startButton.classList.add("hidden");
-    });
   };
 
   const renderRestrictedArea = (shipDiv) => {
@@ -414,6 +486,7 @@ const dom = (() => {
         }
         if (
           boxSquare &&
+          !boxSquare.getAttribute("data-shipID") &&
           boxSquare.getAttribute("data-restrictedareaid") !=
             shipDiv.getAttribute("data-shipID")
         ) {
@@ -430,6 +503,9 @@ const dom = (() => {
     renderComputerBoard,
     addFightFunctionality,
     displayGameOver,
+    processX,
+    canIPlaceShip,
+    randomlyPlaceShips,
   };
 })();
 

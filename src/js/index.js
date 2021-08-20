@@ -18,11 +18,14 @@ events.subscribe(
       showStartButton: true,
       showRestrictedArea: true,
     });
-
-    if (!data.hover) {
-      dom.addClickAndMove(humanPlayer);
-    } else if (data.hover) {
-      dom.extendHover(humanPlayer, data);
+    if (data.randomlyPlaceShips) {
+      dom.randomlyPlaceShips(humanPlayer);
+    } else {
+      if (!data.hover) {
+        dom.addClickAndMove(humanPlayer);
+      } else if (data.hover) {
+        dom.extendHover(humanPlayer, data);
+      }
     }
   }
 );
@@ -36,8 +39,15 @@ events.subscribe("Render computer's board", () => {
   dom.addFightFunctionality();
 });
 
-// Init game's players and gameboards
+events.subscribe("Randomly place ships on computer's board", () => {
+  dom.renderComputerBoard(computerPlayer);
+  dom.randomlyPlaceShips(computerPlayer);
+});
+
+// Init game's players
 const [humanPlayer, computerPlayer] = game.init();
 
 // Init game display
-events.publish("Render player board with click & drop ability");
+events.publish("Render player board with click & drop ability", {
+  randomlyPlaceShips: true,
+});

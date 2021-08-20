@@ -17,6 +17,24 @@ Solve those, and I'll end up with the solution.
 
 ---
 
+For now, I'll get into React (and maybe Typescript?)
+
+After that, I'll come back here. But for now, I really do hope that React will help me.
+
+Hmm, but first I'll try to clean up this project as much as I can.
+
+Goal in mind of refactoring, solution to find: randomly place 5 ships on the board.
+
+---
+
+So, let's get into the meat of it.
+
+Randomly place 5 ships on the board.
+
+When I place them by the `gameboard` method, it doesn't do the DOM checks for 'can I place a ship there?'...
+
+---
+
 1. Render the restricted area during `renderPlayerBoard` called with the `click & drop ability event`
 
 Try to make it as simple and therefore as beautiful as possible. So that it's independent of much other code.

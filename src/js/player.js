@@ -16,7 +16,7 @@ const Player = ({ who }) => {
   const randomAttack = () => {
     let move;
     do {
-      let [randomX, randomY] = getRandomCoords();
+      let [randomX, randomY] = gameboard.getRandomCoords();
       move = enemyGameboard.receiveAttack(randomX, randomY);
     } while (move === undefined);
     return move;
@@ -38,15 +38,5 @@ const Player = ({ who }) => {
     };
   }
 };
-
-/* Helper math methods */
-
-const getRandomNumInRange = (min, max) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
-
-const getRandomCoords = () => [
-  getRandomNumInRange(0, 9),
-  getRandomNumInRange(0, 9),
-];
 
 export default Player;
