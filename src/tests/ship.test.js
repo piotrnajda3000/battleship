@@ -5,6 +5,7 @@ const newShip = Ship(3);
 test("Given length, instantiates properly", () => {
   expect(newShip.info).toEqual({
     length: 3,
+    // FIXME: This is wasted potential.
     hitMap: [false, false, false],
   });
 });

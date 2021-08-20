@@ -1,0 +1,9 @@
+#attackBoard .square:hover {
+  background-color: var(--backdrop-color);
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
+#attackBoard {
+  box-shadow: 1rem 1rem 1rem hsla(0, 0%, 26%, 16%);
+}

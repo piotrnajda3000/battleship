@@ -24,6 +24,7 @@
     "webpack-cli": "^4.7.2"
   },
   "dependencies": {
+    "lodash.isequal": "^4.5.0",
     "normalize.css": "^8.0.1"
   },
   "main": "webpack.config.js",

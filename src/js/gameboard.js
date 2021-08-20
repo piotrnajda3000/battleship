@@ -1,17 +1,6 @@
-/*
-Note that we have not yet created any User Interface. 
-We should know our code is coming together by running the tests. 
-You shouldn’t be relying on 
-console.logs or DOM methods 
-to make sure your code is doing what you expect it to.
-*/
-
-/* 
-Place ships at specific coordinates, 
-by calling the ship factory function
-*/
-
 import Ship from "./ship";
+
+import isEqual from "lodash.isequal";
 
 export default function Gameboard() {
   const gameboard = [];
@@ -42,11 +31,23 @@ export default function Gameboard() {
   const placeShip = (x, y) => {
     return function (shipLength) {
       const ship = Ship(shipLength);
-      shipsOnBoard.push(ship);
+
+      if (
+        shipsOnBoard.some((shipOnBoard) => isEqual(ship, shipOnBoard)) == false
+      ) {
+        shipsOnBoard.push(ship);
+      } else {
+        const shipOnBoardIdx = shipsOnBoard.findIndex((shipOnBoard) =>
+          isEqual(ship, shipOnBoard)
+        );
+        shipsOnBoard[shipOnBoardIdx] = ship;
+      }
+
       for (let i = 0; i < shipLength; i++) {
-        setSquare(parseInt(x, 10) + parseInt(i, 10), parseInt(y, 10), {
+        setSquare(+x + i, +y, {
           ship,
           shipHitMapPos: i,
+          // Tying ship to DOM, I can do better than this.
         });
       }
       return ship;
@@ -54,7 +55,7 @@ export default function Gameboard() {
   };
 
   function deleteShip(ship) {
-    // Delete from the board
+    // From the board
     for (const [y, row] of this.getBoard().entries()) {
       for (const [x, column] of row.entries()) {
         if (column.ship == ship) {
@@ -62,16 +63,12 @@ export default function Gameboard() {
         }
       }
     }
-    // Delete from the shipsOnBoard
-    shipsOnBoard.splice(shipsOnBoard.indexOf(ship), 1);
   }
 
   const receiveAttack = (x, y) => {
     let square = getSquare(x, y);
-    if (square !== "" && square !== "missed") {
-      const ship = square.ship;
-      const hitMapPos = square.shipHitMapPos;
-      ship.hit(hitMapPos);
+    if (square !== "" && square !== "missed" && square !== "hit") {
+      square.ship.hit(square.shipHitMapPos);
       return setSquare(x, y, "hit");
     } else if (square !== "missed") {
       return setSquare(x, y, "missed");
@@ -82,14 +79,25 @@ export default function Gameboard() {
     return shipsOnBoard.every((ship) => ship.isSunk());
   };
 
+  const getShipID = (ship) => {
+    return shipsOnBoard.indexOf(ship);
+  };
+
+  function moveShip(ship, toX, toY) {
+    this.deleteShip(ship);
+    return this.placeShip(toX, toY)(ship.info.length);
+  }
+
   return {
     getBoard,
-    shipsOnBoard,
     getSquare,
+    getShipID,
     setSquare,
+    shipsOnBoard,
     placeShip,
     deleteShip,
     receiveAttack,
     areAllSunk,
+    moveShip,
   };
 }

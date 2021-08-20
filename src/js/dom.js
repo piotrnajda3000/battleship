@@ -8,44 +8,46 @@ const dom = (() => {
 
   // Public methods
 
-  const renderPlayerBoard = (player) => {
-    console.log("Rerendering user board");
-
+  const renderPlayerBoard = (player, options = "") => {
     resetDynamicContent(humanBoardDiv);
 
-    const gameboard = player.gameboard.getBoard();
+    if (options.showStartButton) createStartButton();
 
     // Parse and display rows and columns
-    for (const [y, row] of gameboard.entries()) {
+    for (const [y, row] of player.gameboard.getBoard().entries()) {
       const rowDiv = document.createElement("div");
       rowDiv.classList.add("row");
       for (const [x, column] of row.entries()) {
         let squareDiv;
         if (column.ship !== undefined) {
           squareDiv = createSquare(x, y, `${column.ship.info.length}`, "ship");
-          squareDiv = assignHitMapPosDom(squareDiv, column.ship);
+          squareDiv = setShipData(squareDiv, column, player.gameboard);
         } else if (column == "missed") {
           squareDiv = createSquare(x, y, `-`, "miss");
         } else if (column == "hit") {
           squareDiv = createSquare(x, y, `+`, "hit");
         } else {
-          // Empty squares
           squareDiv = createSquare(x, y, `?`, "water");
         }
         rowDiv.append(squareDiv);
       }
       humanBoardDiv.append(rowDiv);
     }
+
+    if (options.showRestrictedArea) {
+      const ships = [...humanBoardDiv.querySelectorAll(".ship")];
+      ships.forEach((ship) => renderRestrictedArea(ship));
+    }
+
     humanBoardDiv.append(title("Your board"));
   };
 
   const renderComputerBoard = (computer) => {
     resetDynamicContent(computerBoardDiv);
-
-    const gameboard = computer.gameboard.getBoard();
+    computerBoardDiv.classList.remove("hidden");
 
     // Parse and display rows and columns
-    for (const [y, row] of gameboard.entries()) {
+    for (const [y, row] of computer.gameboard.getBoard().entries()) {
       const rowDiv = document.createElement("div");
       rowDiv.classList.add("row");
       for (const [x, column] of row.entries()) {
@@ -68,19 +70,17 @@ const dom = (() => {
   const displayGameOver = (text) => {
     const boardsWrapper = document.querySelector("#boardsWrapper");
 
-    boardsWrapper.classList.add("hidden");
+    boardsWrapper.classList.add("hiddenBoard");
 
     boardsWrapper.addEventListener("transitionend", () => {
       boardsWrapper.innerHTML = "";
       const message = title(text);
       boardsWrapper.append(message);
-      boardsWrapper.classList.remove("hidden");
+      boardsWrapper.classList.remove("hiddenBoard");
     });
   };
 
   const addClickAndMove = (player) => {
-    const gameboard = player.gameboard;
-
     const addClickListener = () => {
       const shipElements = [...humanBoardDiv.querySelectorAll(".ship")];
       shipElements.forEach((shipElement) =>
@@ -91,65 +91,76 @@ const dom = (() => {
     const handleClick = (event) => {
       const clickedSquare = event.target;
       const [x, y] = getCoordinates(clickedSquare);
+      clickedSquare.classList.add("hovering");
+      clickedSquare.addEventListener("click", dropShip);
 
-      const clickedSquareObj = gameboard.getSquare(x, y);
-      gameboard.deleteShip(clickedSquareObj.ship);
+      const clickedSquareObj = player.gameboard.getSquare(x, y);
 
-      const clickDataToSend = {
-        from: {
-          x,
-          y,
+      // Data to send to the hover event
+      const data = {
+        click: {
+          from: {
+            x,
+            y,
+          },
+          whereClicked: +clickedSquare.getAttribute("data-hitmappos"),
+          ship: clickedSquareObj.ship,
         },
-        renderOffset: +clickedSquare.getAttribute("data-hitmappos"),
-        square: clickedSquareObj,
+        hover: {
+          from: {
+            x: +x,
+            y: +y,
+          },
+        },
       };
 
-      addHoverListener(clickDataToSend);
+      addHoverListener(data);
     };
 
-    const addHoverListener = (clickData) => {
+    const addHoverListener = (data) => {
       const squares = [...humanBoardDiv.querySelectorAll(".square")];
       squares.forEach((square) =>
         square.addEventListener("mouseenter", (event) =>
-          handleHover(event, clickData)
+          handleHover(event, data)
         )
       );
     };
 
-    const handleHover = (event, clickData) => {
-      const hoveredToField = event.target;
-      const [x, y] = getCoordinates(hoveredToField);
+    const handleHover = (event, receivedData) => {
+      const hoveredToSquare = event.target;
+      const [x, y] = getCoordinates(hoveredToSquare);
 
-      const hoverData = {
-        to: {
-          x,
-          y,
+      const data = {
+        click: {
+          ...receivedData.click,
+        },
+        hover: {
+          ...receivedData.hover.from,
+          to: {
+            x,
+            y,
+          },
+        },
+        render: {
+          to: {
+            x: processX(
+              receivedData.click.whereClicked,
+              receivedData.click.ship.info.length,
+              x
+            ),
+          },
         },
       };
 
-      if (!gameboard.getSquare(hoverData.to.x, hoverData.to.y).ship) {
-        const hoveringShip = placeShipDOM(
-          clickData.square.ship,
-          hoverData.to.x,
-          hoverData.to.y,
-          clickData.renderOffset,
-          gameboard
-        );
+      if (canIPlaceShip(data, player.gameboard)) {
+        player.gameboard.deleteShip(data.click.ship);
 
-        events.publish("Render player board", {
-          hover: {
-            ship: hoveringShip,
-            from: {
-              x: +clickData.from.x,
-              y: +clickData.from.y,
-            },
-            to: {
-              x: +hoverData.to.x,
-              y: +hoverData.to.y,
-            },
-            renderOffset: clickData.renderOffset,
-          },
-        });
+        data.click.ship = player.gameboard.placeShip(
+          data.render.to.x,
+          data.hover.to.y
+        )(data.click.ship.info.length);
+
+        events.publish("Render player board with click & drop ability", data);
       }
     };
 
@@ -157,21 +168,19 @@ const dom = (() => {
     addClickListener();
   };
 
-  const extendHover = (player, hover) => {
-    const gameboard = player.gameboard;
-
-    // The square we hovered to becomes a place we hover from
-    const fromY = hover.to.y;
-    const fromX = hover.to.x;
-
-    // console.log(
-    //   "from",
-    //   hover.from.x,
-    //   hover.from.y,
-    //   "to",
-    //   hover.to.x,
-    //   hover.to.y
-    // );
+  const extendHover = (player, pastData) => {
+    const currentData = {
+      ...pastData,
+      hover: {
+        // The place we hovered to in the past, becomes the place we hover from.
+        from: {
+          x: pastData.hover.to.x,
+          y: pastData.hover.to.y,
+        },
+        // We haven't hovered anywhere yet.
+        to: {},
+      },
+    };
 
     const addHoverListener = () => {
       const squares = [...humanBoardDiv.querySelectorAll(".square")];
@@ -180,96 +189,111 @@ const dom = (() => {
       });
     };
 
-    const handleHover = (hoverEvent) => {
-      const currentSquare = hoverEvent.target;
-      const [toX, toY] = getCoordinates(currentSquare);
+    const handleHover = (event) => {
+      const hoveredToSquare = event.target;
+
+      const [x, y] = getCoordinates(hoveredToSquare);
+
+      currentData.hover.to = {
+        x,
+        y,
+      };
+
+      currentData.render.to.x = processX(
+        currentData.click.whereClicked,
+        currentData.click.ship.info.length,
+        x
+      );
 
       // Don't rerender if user is on the same square
-      if (hover.to.x == toX && hover.to.y == toY) {
+      if (
+        pastData.hover.to.x == currentData.hover.to.x &&
+        pastData.hover.to.y == currentData.hover.to.y
+      ) {
         // Ability to place a ship if the user decides so
-        currentSquare.addEventListener("click", dropShip);
-      } else {
-        gameboard.deleteShip(hover.ship);
-        if (!gameboard.getSquare(toX, toY).ship) {
-          const hoveringShip = placeShipDOM(
-            hover.ship,
-            toX,
-            toY,
-            hover.renderOffset,
-            gameboard
+        hoveredToSquare.addEventListener("click", dropShip);
+        // Visual cue
+        hoveredToSquare.classList.add("hovering");
+      }
+      // Don't rerender if user tries to place a ship on another ship
+      else {
+        if (canIPlaceShip(currentData, player.gameboard)) {
+          currentData.click.ship = player.gameboard.moveShip(
+            currentData.click.ship,
+            currentData.render.to.x,
+            currentData.hover.to.y
           );
-          events.publish("Render player board", {
-            hover: {
-              ship: hoveringShip,
-              from: {
-                x: +fromX,
-                y: +fromY,
-              },
-              to: {
-                x: +toX,
-                y: +toY,
-              },
-              renderOffset: hover.renderOffset,
-            },
-          });
+
+          events.publish(
+            "Render player board with click & drop ability",
+            currentData
+          );
+        } else {
         }
       }
     };
 
-    const dropShip = () => {
-      events.publish("Render player board", {
-        hover: false,
-      });
-    };
-
-    // Start the chain
     addHoverListener();
   };
 
   const addFightFunctionality = () => {
     const squares = [...computerBoardDiv.querySelectorAll(".square")];
-    squares.forEach((square) =>
-      square.addEventListener("click", (e) => {
-        const x = e.target.getAttribute("data-x");
-        const y = e.target.getAttribute("data-y");
-        events.publish("Player attacks", { x, y });
-        events.publish("Render computer's board");
-        events.publish("Check if game over");
-        events.publish("Play computer's turn");
-      })
-    );
+    squares.forEach((square) => {
+      if (square.classList.contains("water")) {
+        square.addEventListener("click", (e) => {
+          const x = e.target.getAttribute("data-x");
+          const y = e.target.getAttribute("data-y");
+          events.publish("Player attacks", { x, y });
+          events.publish("Render computer's board");
+          events.publish("Check if game over");
+          events.publish("Play computer's turn");
+        });
+      }
+    });
   };
 
   // Private methods
 
-  const assignHitMapPosDom = (div, ship) => {
-    const hitMapToDom = ship.dom.addons.hitMapDOM;
-
-    if (hitMapToDom.arr.length == ship.info.length) {
-      hitMapToDom.clearForBoardRender();
-    }
-
-    if (hitMapToDom.arr.length < ship.info.hitMap.length) {
-      hitMapToDom.arr.push(true);
-      div.setAttribute("data-hitMapPos", hitMapToDom.arr.length - 1);
-    }
-    return div;
+  const dropShip = () => {
+    events.publish("Render player board with click & drop ability", {
+      hover: false,
+    });
   };
 
-  const placeShipDOM = function createShipForDomDisplay(
-    ship,
-    x,
-    y,
-    whereGrabbed,
-    gameboard
-  ) {
-    const xRenderOffset = calculateXRenderOffset(
-      whereGrabbed,
-      ship.info.length
-    );
-    const xInBounds = getXInBounds(x - xRenderOffset, ship.info.length);
+  const canIPlaceShip = (data, gameboard) => {
+    for (let i = 0; i < data.click.ship.info.length; i++) {
+      const squareToPlaceShipAt = gameboard.getSquare(
+        data.render.to.x + i,
+        data.hover.to.y
+      );
+      const squareToPlaceShipAtDiv = getSquareFromCoordinates(
+        data.render.to.x + i,
+        data.hover.to.y
+      );
+      const restrictedAreaId = squareToPlaceShipAtDiv.getAttribute(
+        "data-restrictedareaid"
+      );
 
-    return gameboard.placeShip(xInBounds, y)(ship.info.length);
+      if (squareToPlaceShipAt.ship) {
+        if (squareToPlaceShipAt.ship != data.click.ship) {
+          return false;
+        } else {
+          continue;
+        }
+      } else if (restrictedAreaId != null) {
+        if (restrictedAreaId != gameboard.getShipID(data.click.ship)) {
+          return false;
+        } else {
+          continue;
+        }
+      }
+    }
+    return true;
+  };
+
+  const processX = function processXForRender(whereGrabbed, shipLength, x) {
+    const xRenderOffset = calculateXRenderOffset(whereGrabbed, shipLength);
+    return getXInBounds(x - xRenderOffset, shipLength);
   };
 
   const calculateXRenderOffset = (whereGrabbed, shipLength) => {
@@ -286,8 +310,13 @@ const dom = (() => {
   };
 
   const getXInBounds = (x, shipLength) => {
+    // Right board border
     if (+x + shipLength > 10) {
       return getXInBounds(x - 1, shipLength);
+    }
+    // Left board border
+    else if (+x < 0) {
+      return getXInBounds(x + 1, shipLength);
     } else {
       return x;
     }
@@ -297,6 +326,9 @@ const dom = (() => {
     +eventTarget.getAttribute("data-x"),
     +eventTarget.getAttribute("data-y"),
   ];
+
+  const getSquareFromCoordinates = (x, y) =>
+    document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
 
   // HTML and CSS helper functions
 
@@ -314,10 +346,81 @@ const dom = (() => {
     return square;
   };
 
+  const setShipData = (div, column, gameboard) => {
+    div.setAttribute("data-hitMapPos", column.shipHitMapPos);
+    div.setAttribute("data-shipID", gameboard.getShipID(column.ship));
+    return div;
+  };
+
   const title = (title) => {
     const h2 = document.createElement("h2");
     h2.textContent = title;
     return h2;
+  };
+
+  const createStartButton = () => {
+    const startButton = document.createElement("button");
+    startButton.setAttribute("id", "start");
+    startButton.textContent = "Lock ships";
+    humanBoardDiv.append(startButton);
+    startButton.addEventListener("click", () => {
+      events.publish("Start the game");
+      events.publish("Render computer's board");
+      startButton.classList.add("hidden");
+    });
+  };
+
+  const renderRestrictedArea = (shipDiv) => {
+    const x = +shipDiv.getAttribute("data-x");
+    const y = +shipDiv.getAttribute("data-y");
+
+    const box = {
+      top: [
+        [x - 1, y + 1],
+        [x, y + 1],
+        [x + 1, y + 1],
+      ],
+      right: [
+        [x + 1, y + 1],
+        [x + 1, y],
+        [x + 1, y - 1],
+      ],
+      bottom: [
+        [x - 1, y - 1],
+        [x, y - 1],
+        [x + 1, y - 1],
+      ],
+      left: [
+        [x - 1, y + 1],
+        [x - 1, y],
+        [x - 1, y - 1],
+      ],
+    };
+
+    for (const side in box) {
+      for (const square of box[side]) {
+        const boxSquare = getSquareFromCoordinates(square[0], square[1]);
+        if (
+          boxSquare &&
+          !boxSquare.getAttribute("data-shipID") &&
+          !boxSquare.getAttribute("data-restrictedareaid")
+        ) {
+          boxSquare.classList.add("restricted");
+          boxSquare.setAttribute(
+            "data-restrictedAreaID",
+            shipDiv.getAttribute("data-shipID")
+          );
+          boxSquare.textContent = "";
+        }
+        if (
+          boxSquare &&
+          boxSquare.getAttribute("data-restrictedareaid") !=
+            shipDiv.getAttribute("data-shipID")
+        ) {
+          boxSquare.setAttribute("data-restrictedareaid", "corner");
+        }
+      }
+    }
   };
 
   return {

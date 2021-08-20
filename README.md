@@ -1,5 +1,7 @@
 # Battleship
 
+## Introduction
+
 Since I'm doing TDD, it's important that I don't get overwhelmed.
 Simply take it one step at a time. Write a test, then make it pass.
 

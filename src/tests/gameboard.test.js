@@ -50,7 +50,3 @@ describe("areAllSunk function", () => {
     expect(newGameboard3.areAllSunk()).toEqual(true);
   });
 });
-
-// afterAll(() => {
-//   console.log(newGameboard.getBoard());
-// });
