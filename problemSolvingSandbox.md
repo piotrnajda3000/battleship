@@ -2,18 +2,30 @@
 
 ## 1. Understand the problem
 
-**Write it down. Write before I do.**
+Write it down. Write before I do, that is, think before I do. Writing is thinking. Edit for clarity.
 
 If I can't explain the problem to someone in plain English, I don't understand it.
 
 ## 2. Plan
 
-In plain English, write out step-by-step what I'm going to do.
+In plain English, write out step-by-step what I'm going to do,
+before I do it.
 
 ## 3. Divide and conquer
 
 Break down my problems in planning into smaller ones.
 Solve those, and I'll end up with the solution.
+
+---
+
+Problems to solve:
+
+When I press lock ships, I want it to render my board without the ability to click and drop, without restricted areas rendered,
+and I want the computer's board to render with ships randomly placed on it -- just like on my own board.
+
+I've decided to export gameboards from index, because, man, it's a pain in the ass.
+
+Like, `index.js` is the control room of the ship, I think. Mostek statku. That's what index.js is.
 
 ---
 

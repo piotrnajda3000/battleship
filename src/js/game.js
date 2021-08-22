@@ -15,14 +15,15 @@ const game = (() => {
 
     events.subscribe("Check if game over", () => {
       if (computerPlayer.gameboard.areAllSunk()) {
-        dom.displayGameOver("You won");
+        events.publish("Display game over", "You won");
       } else if (humanPlayer.gameboard.areAllSunk()) {
-        dom.displayGameOver("Computer won");
+        events.publish("Display game over", "You won");
       }
     });
 
     events.subscribe("Player attacks", ({ x, y }) => {
       computerPlayer.gameboard.receiveAttack(x, y);
+      events.publish("Render computer board after game started");
     });
 
     events.subscribe("Play computer's turn", () => {
