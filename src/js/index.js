@@ -8,6 +8,7 @@ import "../styles/squares.css";
 import "../styles/boards.css";
 import "../styles/playerBoard.css";
 import "../styles/attackBoard.css";
+import dom from "./dom";
 
 const [humanPlayer, computerPlayer] = game.init();
 

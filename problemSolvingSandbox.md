@@ -18,6 +18,36 @@ Solve those, and I'll end up with the solution.
 
 ---
 
+Anyway, it doesn't really seem to matter which way I extend the objects, unless I care about overwriting properties.
+
+Before, I used a closure. Now these properties are public on the gameboard object.
+
+I don't like that.
+
+---
+
+Now, when the computer is sure it sank a ship, because if there is either no board around the ship, or there are two missed fields around it, or
+the hit ship length is five,
+or when...
+5 ship is sunk -> 4 hit fields = make restricted area
+5 ship is sunk, 4 ship is sunk -> 3 hit fields = make restricted area
+5 ship, 4 ship, 3 ship is sunk -> 3 hit fields = make restricted area
+5, 4, 3, 3, 2 means a win.
+
+So any of these conditions met means that the computer should not hit the restricted area around a ship...
+
+First. Let's clean up my code.
+
+---
+
+You can polish the intelligence of the computer player by having it try adjacent slots after getting a ‘hit’.
+
+---
+
+Okay. So ships are now randomly placed at computer's board. Everything's fine.
+
+---
+
 Problems to solve:
 
 When I press lock ships, I want it to render my board without the ability to click and drop, without restricted areas rendered,

@@ -439,11 +439,8 @@ const dom = (() => {
       renderBoard(humanBoardDiv, playerGameboard);
       renderBoard(computerBoardDiv, computerGameboard);
       randomlyPlaceShips(computerGameboard);
-      renderBoard(computerBoardDiv, computerGameboard);
-      // events.publish("Play computer's turn");
-      // events.publish("Render computer board before game started", {
-      //   randomlyPlaceShips: true,
-      // });
+      events.publish("Render computer board after game started");
+      events.publish("Play computer's turn");
     });
   };
 
@@ -526,8 +523,6 @@ const dom = (() => {
 
   // Subscribe to events
 
-  // Gets gameboard from index which gets it from the game module
-
   events.subscribe(
     "Render player board with click & drop ability",
     (data = false) => {
@@ -544,7 +539,15 @@ const dom = (() => {
     }
   );
 
-  // Event from game.js
+  events.subscribe("Render computer board after game started", () => {
+    renderBoard(computerBoardDiv, computerGameboard);
+    addFightFunctionality();
+  });
+
+  events.subscribe("Render player board after game started", () => {
+    renderBoard(humanBoardDiv, playerGameboard);
+  });
+
   events.subscribe("Display game over", (text) => {
     displayGameOver(text);
   });

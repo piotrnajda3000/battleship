@@ -1,7 +1,5 @@
 import Ship from "./ship";
-
 import isEqual from "lodash.isequal";
-
 import { getRandomNumInRange } from "./math";
 
 export default function Gameboard() {
@@ -69,11 +67,17 @@ export default function Gameboard() {
 
   const receiveAttack = (x, y) => {
     let square = getSquare(x, y);
-    if (square !== "" && square !== "missed" && square !== "hit") {
-      square.ship.hit(square.shipHitMapPos);
-      return setSquare(x, y, "hit");
-    } else if (square !== "missed") {
-      return setSquare(x, y, "missed");
+    if (square != undefined) {
+      if (square.ship) {
+        square.ship.hit(square.shipHitMapPos);
+        return setSquare(x, y, "hit");
+      } else if (square == "") {
+        return setSquare(x, y, "missed");
+      } else {
+        return undefined;
+      }
+    } else {
+      return undefined;
     }
   };
 
@@ -90,6 +94,25 @@ export default function Gameboard() {
     return this.placeShip(toX, toY)(ship.info.length);
   }
 
+  const possibleMovesFrom = (x, y) => {
+    // to the left
+    let possibleMoves = [];
+
+    if (getSquare(x - 1, y) != undefined) {
+      possibleMoves.push(-1);
+    }
+
+    if (getSquare(x + 1, y) != undefined) {
+      possibleMoves.push(1);
+    }
+
+    if (possibleMoves.length > 0) {
+      return possibleMoves;
+    } else {
+      return false;
+    }
+  };
+
   /* Helper math methods */
 
   const getRandomCoords = () => [
@@ -98,6 +121,7 @@ export default function Gameboard() {
   ];
 
   return {
+    possibleMovesFrom,
     getBoard,
     getSquare,
     getShipID,
