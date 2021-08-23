@@ -18,6 +18,14 @@ Solve those, and I'll end up with the solution.
 
 ---
 
+You can polish the intelligence of the computer player by having it try adjacent slots after getting a ‘hit’.
+
+---
+
+Okay. So ships are now randomly placed at computer's board. Everything's fine.
+
+---
+
 Problems to solve:
 
 When I press lock ships, I want it to render my board without the ability to click and drop, without restricted areas rendered,

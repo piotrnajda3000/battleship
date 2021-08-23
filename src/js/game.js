@@ -1,7 +1,5 @@
-import dom from "./dom";
 import events from "./events";
 import Player from "./player";
-import { getRandomNumInRange } from "./math";
 
 const game = (() => {
   const init = () => {
@@ -17,7 +15,7 @@ const game = (() => {
       if (computerPlayer.gameboard.areAllSunk()) {
         events.publish("Display game over", "You won");
       } else if (humanPlayer.gameboard.areAllSunk()) {
-        events.publish("Display game over", "You won");
+        events.publish("Display game over", "Computer won");
       }
     });
 
@@ -28,7 +26,8 @@ const game = (() => {
 
     events.subscribe("Play computer's turn", () => {
       computerPlayer.randomAttack();
-      events.publish("Render player board");
+      events.publish("Render player board after game started");
+      events.publish("Check if game over");
     });
 
     return [humanPlayer, computerPlayer];
