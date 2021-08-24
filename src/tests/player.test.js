@@ -1,9 +1,8 @@
-import Player from "../js/player";
-
+import { HumanPlayer, ComputerPlayer } from "../js/player";
 // can take turns?????
 
-const humanPlayer = Player({ who: "Human" });
-const computerPlayer = Player({ who: "Computer" });
+const humanPlayer = HumanPlayer();
+const computerPlayer = ComputerPlayer();
 
 humanPlayer.setEnemyBoard(computerPlayer.gameboard);
 computerPlayer.setEnemyBoard(humanPlayer.gameboard);

@@ -3,16 +3,11 @@ import isEqual from "lodash.isequal";
 import { getRandomNumInRange } from "./math";
 
 export default function Gameboard() {
-  // gameboard = 10x10 2D Array
-  const gameboard = [];
-  for (let y = 0; y < 10; y++) {
-    const row = [];
-    for (let x = 0; x < 10; x++) {
-      // Create empty columns
-      row.push("");
-    }
-    gameboard.push(row);
-  }
+  // 10x10 2D Array
+  const gameboard = Array(10)
+    .fill([])
+    .map(() => Array(10).fill(""));
+
   const shipsOnBoard = [];
 
   const getBoard = () => gameboard;
@@ -26,23 +21,26 @@ export default function Gameboard() {
     return { x, y, value };
   };
 
+  // placeShip helpers
+
+  const isShipOnBoard = (ship) =>
+    shipsOnBoard.some((shipOnBoard) => isEqual(ship, shipOnBoard));
+
+  const referenceTie = (toWhat, toTie) => {
+    const objectIdx = toWhat.findIndex((objToTieTo) =>
+      isEqual(toTie, objToTieTo)
+    );
+    toWhat[objectIdx] = toTie;
+  };
+
   const placeShip = (x, y) => {
     return function (shipLength) {
       const ship = Ship(shipLength);
 
-      if (
-        // If the ship isn't in shipsOnBoard yet
-        shipsOnBoard.some((shipOnBoard) => isEqual(ship, shipOnBoard)) == false
-      ) {
+      if (!isShipOnBoard(ship)) {
         shipsOnBoard.push(ship);
       } else {
-        /* After deleting a ship to re-render it on hover,
-        it loses it's reference to the shipOnBoard   
-        */
-        const shipIdx = shipsOnBoard.findIndex((shipOnBoard) =>
-          isEqual(ship, shipOnBoard)
-        );
-        shipsOnBoard[shipIdx] = ship;
+        referenceTie(shipsOnBoard, ship);
       }
 
       for (let i = 0; i < shipLength; i++) {
@@ -65,6 +63,11 @@ export default function Gameboard() {
     }
   }
 
+  function moveShip(ship, toX, toY) {
+    this.deleteShip(ship);
+    return this.placeShip(toX, toY)(ship.info.length);
+  }
+
   const receiveAttack = (x, y) => {
     let square = getSquare(x, y);
     if (square != undefined) {
@@ -81,21 +84,11 @@ export default function Gameboard() {
     }
   };
 
-  const areAllSunk = () => {
-    return shipsOnBoard.every((ship) => ship.isSunk());
-  };
+  const areAllSunk = () => shipsOnBoard.every((ship) => ship.isSunk());
 
-  const getShipID = (ship) => {
-    return shipsOnBoard.indexOf(ship);
-  };
-
-  function moveShip(ship, toX, toY) {
-    this.deleteShip(ship);
-    return this.placeShip(toX, toY)(ship.info.length);
-  }
+  const getShipID = (ship) => shipsOnBoard.indexOf(ship);
 
   const possibleMovesFrom = (x, y) => {
-    // to the left
     let possibleMoves = [];
 
     if (getSquare(x - 1, y) != undefined) {

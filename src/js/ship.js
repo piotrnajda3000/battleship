@@ -1,9 +1,17 @@
 export default function Ship(length) {
-  // Initialize hitMap with no hits recorded
-  const hitMap = [];
-  for (let i = 0; i < length; i++) {
-    hitMap.push(false);
-  }
+  const hitMap = Array(length).fill(false);
+
+  const methods = {
+    hit(position) {
+      if (position >= 0 && position < hitMap.length) {
+        this.info.hitMap[position] = true;
+      }
+      return this;
+    },
+    isSunk() {
+      return this.info.hitMap.every((square) => square == true);
+    },
+  };
 
   return Object.assign(
     {},
@@ -12,20 +20,7 @@ export default function Ship(length) {
         length,
         hitMap,
       },
-      hit,
-      isSunk,
-    }
+    },
+    methods
   );
-}
-
-function hit(position) {
-  const hitMap = this.info.hitMap;
-  if (position >= 0 && position < hitMap.length) {
-    hitMap[position] = true;
-  }
-  return this;
-}
-
-function isSunk() {
-  return this.info.hitMap.every((square) => square == true);
 }
