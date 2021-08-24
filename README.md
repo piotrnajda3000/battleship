@@ -8,3 +8,5 @@ Simply take it one step at a time. Write a test, then make it pass.
 Isolate every bit of application functionality from the DOM manipulation bits.
 
 Remember that code is written for other humans and only incidentally for the machine to read.
+
+---

@@ -19,7 +19,7 @@ describe("Human player", () => {
 describe("Computer player", () => {
   describe("Attacking an enemy gameboard", () => {
     test("Makes a legal random attack", () => {
-      expect(computerPlayer.randomAttack()).not.toBe(undefined);
+      expect(computerPlayer.attack()).not.toBe(undefined);
     });
   });
 });

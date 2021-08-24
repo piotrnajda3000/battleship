@@ -1,101 +1,113 @@
 import Gameboard from "./gameboard";
-import { getRandomNumInRange } from "./math";
 
-const Player = ({ who }) => {
-  const gameboard = Gameboard();
+const Player = (who) => (extendWith) => {
+  return Object.assign(
+    {
+      gameboard: Gameboard(),
+      enemyGameboard: null,
+      setEnemyBoard(enemyBoard) {
+        this.enemyGameboard = enemyBoard;
+      },
+      attack(x, y) {
+        return this.enemyGameboard.receiveAttack(x, y);
+      },
+    },
+    who,
+    extendWith
+  );
+};
 
-  let enemyGameboard = null;
-
-  const setEnemyBoard = (enemyBoard) => {
-    enemyGameboard = enemyBoard;
-  };
-
-  const attack = (x, y) => {
-    return enemyGameboard.receiveAttack(x, y);
-  };
-
-  // Computer attack
-
-  const getFieldWithPossibleMoves = (i = 0) => {
-    const checkedField = currentAttack.length - 2 - i;
-    if (currentAttack[checkedField] == undefined) {
-      return false;
-    } else if (currentAttack[checkedField].possibleMoves.length > 0) {
-      return currentAttack[checkedField];
-    } else {
-      return getFieldWithPossibleMoves(i - 1);
-    }
-  };
-
+const ComputerAttack = () => {
   let lastHitField = {};
   let currentAttack = [];
 
-  const randomAttack = () => {
-    let move;
+  const clearAttack = () => {
+    currentAttack = [];
+    lastHitField = {};
+  };
 
+  const isAttackPossible = (field) => {
+    if (!isNaN(field.x) && field.possibleMoves.length > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  const findFieldToAttack = function findFieldWithPossibleAttackMove(i = 0) {
+    const checkedField = currentAttack.length - 1 - i;
+
+    const field = currentAttack[checkedField];
+
+    if (field == undefined) {
+      return false;
+    } else if (isAttackPossible(field)) {
+      return field;
+    } else {
+      return findFieldToAttack(i + 1);
+    }
+  };
+
+  const getRandomDirection = (possibleDirections) => {
+    return Math.floor(Math.random() * possibleDirections.length);
+  };
+
+  function attack() {
+    let madeMove = {
+      x: null,
+      y: null,
+    };
     do {
-      let randomX, randomY;
-
-      /* On the next attack, see if there are any possible moves from that field.
-      If there are none, recursively check fields before that and stop at one that has possible moves. */
-      if (!isNaN(lastHitField.x) && lastHitField.possibleMoves.length == 0) {
-        if (currentAttack.length > 1) {
-          lastHitField = getFieldWithPossibleMoves();
-        }
-        // If there are none, we're out of options, go make a random move.
-        if (lastHitField == false) {
-          lastHitField = {};
-          currentAttack = [];
-        }
-      }
-      // If there are, make move from that field, remove that move as possible.
-      if (!isNaN(lastHitField.x) && lastHitField.possibleMoves.length > 0) {
-        const whichWay = Math.floor(
-          Math.random() * lastHitField.possibleMoves.length
-        );
-        randomX = lastHitField.x + lastHitField.possibleMoves[whichWay];
-        // Remove that move as possible for this hit
-        lastHitField.possibleMoves.splice(whichWay, 1);
-        randomY = lastHitField.y;
-      } else {
-        const randomCoords = gameboard.getRandomCoords();
-        randomX = randomCoords[0];
-        randomY = randomCoords[1];
-      }
-
-      move = enemyGameboard.receiveAttack(randomX, randomY);
-    } while (move === undefined);
-
-    /* When I finally hit a field, i register the x and y of that field. 
-    From that field, I calculate which ways can I go, so that I make a move within the bounds of the gameboard. */
-    if (move.value == "hit") {
-      lastHitField = {
-        x: move.x,
-        y: move.y,
-        possibleMoves: enemyGameboard.possibleMovesFrom(move.x, move.y),
+      let tryMove = {
+        x: null,
+        y: null,
       };
-      // I add that field to the current attack sequence.
+
+      if (!isAttackPossible(lastHitField)) {
+        if (currentAttack.length > 1) {
+          const fieldToAttack = findFieldToAttack();
+          if (fieldToAttack) {
+            lastHitField = fieldToAttack;
+          } else {
+            clearAttack();
+          }
+        }
+      }
+
+      if (isAttackPossible(lastHitField)) {
+        const randomDirection = getRandomDirection(lastHitField.possibleMoves);
+        tryMove.x =
+          lastHitField.x + lastHitField.possibleMoves[randomDirection];
+        tryMove.y = lastHitField.y;
+        lastHitField.possibleMoves.splice(randomDirection, 1);
+      } else {
+        [tryMove.x, tryMove.y] = this.gameboard.getRandomCoords();
+      }
+
+      madeMove = this.enemyGameboard.receiveAttack(tryMove.x, tryMove.y);
+    } while (madeMove === undefined);
+
+    if (madeMove.value == "hit") {
+      lastHitField = {
+        x: madeMove.x,
+        y: madeMove.y,
+        possibleMoves: this.enemyGameboard.possibleMovesFrom(
+          madeMove.x,
+          madeMove.y
+        ),
+      };
       currentAttack.push(lastHitField);
     }
 
-    return move;
-  };
-
-  if (who == "Computer") {
-    return {
-      gameboard,
-      who,
-      randomAttack,
-      setEnemyBoard,
-    };
-  } else {
-    return {
-      gameboard,
-      who,
-      setEnemyBoard,
-      attack,
-    };
+    return madeMove;
   }
+
+  return {
+    attack,
+  };
 };
 
-export default Player;
+const HumanPlayer = () => Player({ who: "Human" })({});
+const ComputerPlayer = () => Player({ who: "Computer" })(ComputerAttack());
+
+export { HumanPlayer, ComputerPlayer };
