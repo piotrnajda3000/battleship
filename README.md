@@ -1,5 +1,7 @@
 # Battleship
 
+## **[Live link](https://piotrnajda3000.github.io/battleship/)**
+
 ## Introduction
 
 Since I'm doing TDD, it's important that I don't get overwhelmed.
