@@ -18,15 +18,18 @@ Solve those, and I'll end up with the solution.
 
 ---
 
----
+I've spent the most time I've ever spent on a coding project so far.
+I don't know how long. Perhaps even two, three weeks of work?
 
-Anyway, it doesn't really seem to matter which way I extend the objects, unless I care about overwriting properties.
-
-Before, I used a closure. Now these properties are public on the gameboard object.
-
-I don't like that.
+For now, I'll take a breather from this project to step on a bit, I'm sure when I come back to this project later, player.js in particular, I'll see it in a new light.
 
 ---
+
+FIXME: Make it mobile friendly, and responsive.
+
+---
+
+FIXME: AI improvement idea
 
 Now, when the computer is sure it sank a ship, because if there is either no board around the ship, or there are two missed fields around it, or
 the hit ship length is five,
@@ -37,5 +40,3 @@ or when...
 5, 4, 3, 3, 2 means a win.
 
 So any of these conditions met means that the computer should not hit the restricted area around a ship...
-
-First. Let's clean up my code.

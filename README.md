@@ -10,5 +10,3 @@ Isolate every bit of application functionality from the DOM manipulation bits.
 Remember that code is written for other humans and only incidentally for the machine to read.
 
 ---
-
-Computer attack object is badly designed.
