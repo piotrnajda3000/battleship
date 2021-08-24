@@ -39,5 +39,5 @@
 }
 
 .restricted {
-  background-color: var(--backdrop-darker);
+  background-color: hsl(230, 75%, 91%);
 }
